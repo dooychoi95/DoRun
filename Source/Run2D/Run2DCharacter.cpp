@@ -74,6 +74,8 @@ ARun2DCharacter::ARun2DCharacter()
 	// Enable replication on the Sprite component so animations show up when networked
 	GetSprite()->SetIsReplicated(true);
 	bReplicates = true;
+
+	// Add Test comment 20200111 dooychoi
 }
 
 //////////////////////////////////////////////////////////////////////////
