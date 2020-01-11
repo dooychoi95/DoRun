@@ -75,8 +75,6 @@ ARun2DCharacter::ARun2DCharacter()
 	GetSprite()->SetIsReplicated(true);
 	bReplicates = true;
 
-	// Add Test comment 20200111 dooychoi
-	// Next Add Test comment 20200111 dooychoi
 }
 
 //////////////////////////////////////////////////////////////////////////
