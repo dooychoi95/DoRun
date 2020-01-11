@@ -76,6 +76,7 @@ ARun2DCharacter::ARun2DCharacter()
 	bReplicates = true;
 
 	// Add Test comment 20200111 dooychoi
+	// Next Add Test comment 20200111 dooychoi
 }
 
 //////////////////////////////////////////////////////////////////////////
