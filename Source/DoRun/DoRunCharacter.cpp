@@ -129,23 +129,21 @@ bool ADoRunCharacter::CanFly() const
 
 void ADoRunCharacter::UpdateAnimation(const ECharacterState NewState)
 {
-	UE_LOG(SideScrollerCharacter, Log, TEXT("UpdateAnimation"));
-
+	UPaperFlipbook* DesiredAnimation = nullptr;
 	switch (NewState)
 	{
-	case ECharacterState::Run:
-		if (RunningAnimation)
-		{
-			UPaperFlipbook* DesiredAnimation = RunningAnimation;
-			if (GetSprite()->GetFlipbook() != DesiredAnimation)
-			{
-				UE_LOG(SideScrollerCharacter, Log, TEXT("SetFlipbook "));
-				GetSprite()->SetFlipbook(DesiredAnimation);
-			}
-		}
+	case ECharacterState::Jump: // 점프 애니메이션만 따로 재생
+		DesiredAnimation = JumpAnimation;
 		break;
-	default:
+	default: // 그 외 애니메이션은 달리기
+		DesiredAnimation = RunningAnimation;
 		break;
+	}
+
+	bool bEnable = GetSprite() && DesiredAnimation && GetSprite()->GetFlipbook() != DesiredAnimation;
+	if (bEnable)
+	{
+		GetSprite()->SetFlipbook(DesiredAnimation);
 	}
 }
 

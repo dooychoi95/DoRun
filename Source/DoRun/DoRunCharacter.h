@@ -14,6 +14,7 @@ enum class ECharacterState : uint8
 	Jump,
 	Fly,
 	Falling,
+	Max,
 };
 
 class UTextRenderComponent;
@@ -49,7 +50,7 @@ protected:
 
 	// The animation to play while idle (standing still)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
-	class UPaperFlipbook* IdleAnimation;
+	class UPaperFlipbook* JumpAnimation;
 
 	/** Called for side to side input */
 	void MoveRight(float Value);
