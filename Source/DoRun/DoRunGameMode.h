@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
-#include "Run2DGameMode.generated.h"
+#include "DoRunGameMode.generated.h"
 
 /**
  * The GameMode defines the game being played. It governs the game rules, scoring, what actors
@@ -13,9 +13,9 @@
  * This game mode just sets the default pawn to be the MyCharacter asset, which is a subclass of Run2DCharacter
  */
 UCLASS(minimalapi)
-class ARun2DGameMode : public AGameModeBase
+class ADoRunGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 public:
-	ARun2DGameMode();
+	ADoRunGameMode();
 };

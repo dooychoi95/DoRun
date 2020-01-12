@@ -3,11 +3,11 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class Run2DTarget : TargetRules
+public class DoRunTarget : TargetRules
 {
-	public Run2DTarget(TargetInfo Target) : base(Target)
+	public DoRunTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
-		ExtraModuleNames.Add("Run2D");
+		ExtraModuleNames.Add("DoRun");
 	}
 }

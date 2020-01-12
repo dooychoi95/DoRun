@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "PaperCharacter.h"
-#include "Run2DCharacter.generated.h"
+#include "DoRunCharacter.generated.h"
 
 UENUM()
 enum class ECharacterState : uint8
@@ -27,7 +27,7 @@ class UTextRenderComponent;
  * The Sprite component (inherited from APaperCharacter) handles the visuals
  */
 UCLASS(config=Game)
-class ARun2DCharacter : public APaperCharacter
+class ADoRunCharacter : public APaperCharacter
 {
 	GENERATED_BODY()
 
@@ -67,7 +67,7 @@ protected:
 	// End of APawn interface
 
 public:
-	ARun2DCharacter();
+	ADoRunCharacter();
 
 	/** Returns SideViewCameraComponent subobject **/
 	FORCEINLINE class UCameraComponent* GetSideViewCameraComponent() const { return SideViewCameraComponent; }

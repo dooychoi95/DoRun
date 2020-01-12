@@ -4,11 +4,11 @@
 	"Category": "",
 	"Description": "",
 	"Modules": [
-		{
-			"Name": "Run2D",
-			"Type": "Runtime",
-			"LoadingPhase": "Default"
-		}
+    {
+      "Name": "DoRun",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
 	],
 	"Plugins": [
 		{

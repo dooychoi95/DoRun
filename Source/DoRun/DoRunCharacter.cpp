@@ -1,6 +1,6 @@
 // Copyright 1998-2018 Epic Games, Inc. All Rights Reserved.
 
-#include "Run2DCharacter.h"
+#include "DoRunCharacter.h"
 #include "PaperFlipbookComponent.h"
 #include "Components/TextRenderComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -13,10 +13,10 @@
 DEFINE_LOG_CATEGORY_STATIC(SideScrollerCharacter, Log, All);
 
 //////////////////////////////////////////////////////////////////////////
-// ARun2DCharacter
+// ADoRunCharacter
 PRAGMA_DISABLE_OPTIMIZATION
 
-ARun2DCharacter::ARun2DCharacter()
+ADoRunCharacter::ADoRunCharacter()
 {
 	// Use only Yaw from the controller and ignore the rest of the rotation.
 	bUseControllerRotationPitch = false;
@@ -73,14 +73,14 @@ ARun2DCharacter::ARun2DCharacter()
 	SetCharacterState(ECharacterState::Run);
 }
 
-void ARun2DCharacter::Jump()
+void ADoRunCharacter::Jump()
 {
 	Super::Jump();
 	
 	SetCharacterState(ECharacterState::Jump);
 }
 
-void ARun2DCharacter::StopJumping()
+void ADoRunCharacter::StopJumping()
 {
 	Super::StopJumping();
 
@@ -88,7 +88,7 @@ void ARun2DCharacter::StopJumping()
 }
 
 // GetState Name
-const FString ARun2DCharacter::GetCharacterStateToString(ECharacterState InState) const
+const FString ADoRunCharacter::GetCharacterStateToString(ECharacterState InState) const
 {
 	const UEnum* CharacterState = FindObject<UEnum>(ANY_PACKAGE, TEXT("ECharacterState"));
 	if (CharacterState)
@@ -100,7 +100,7 @@ const FString ARun2DCharacter::GetCharacterStateToString(ECharacterState InState
 }
 
 // 캐릭터 상태 변경
-void ARun2DCharacter::SetCharacterState(const ECharacterState NewState)
+void ADoRunCharacter::SetCharacterState(const ECharacterState NewState)
 {
 	bool bChange = (CurrntState != NewState);
 	if (bChange)
@@ -111,7 +111,7 @@ void ARun2DCharacter::SetCharacterState(const ECharacterState NewState)
 }
 
 // 캐릭터 상태 변경 성공 시 호출
-void ARun2DCharacter::OnChangeCharacterState(const ECharacterState NewState)
+void ADoRunCharacter::OnChangeCharacterState(const ECharacterState NewState)
 {
 	// 애니메이션 변경
 	UpdateAnimation(NewState);
@@ -119,7 +119,7 @@ void ARun2DCharacter::OnChangeCharacterState(const ECharacterState NewState)
 	UE_LOG(SideScrollerCharacter, Log, TEXT("Current: %s New: %s"), *GetCharacterStateToString(CurrntState), *GetCharacterStateToString(NewState));
 }
 
-bool ARun2DCharacter::CanFly() const
+bool ADoRunCharacter::CanFly() const
 {
 	return (0 < JumpCurrentCount);
 }
@@ -127,7 +127,7 @@ bool ARun2DCharacter::CanFly() const
 //////////////////////////////////////////////////////////////////////////
 // Animation
 
-void ARun2DCharacter::UpdateAnimation(const ECharacterState NewState)
+void ADoRunCharacter::UpdateAnimation(const ECharacterState NewState)
 {
 	UE_LOG(SideScrollerCharacter, Log, TEXT("UpdateAnimation"));
 
@@ -149,7 +149,7 @@ void ARun2DCharacter::UpdateAnimation(const ECharacterState NewState)
 	}
 }
 
-void ARun2DCharacter::Tick(float DeltaSeconds)
+void ADoRunCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
@@ -159,35 +159,35 @@ void ARun2DCharacter::Tick(float DeltaSeconds)
 //////////////////////////////////////////////////////////////////////////
 // Input
 
-void ARun2DCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
+void ADoRunCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Note: the 'Jump' action and the 'MoveRight' axis are bound to actual keys/buttons/sticks in DefaultInput.ini (editable from Project Settings..Input)
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-	//PlayerInputComponent->BindAxis("MoveRight", this, &ARun2DCharacter::MoveRight);
-	//PlayerInputComponent->BindTouch(IE_Pressed, this, &ARun2DCharacter::TouchStarted);
-	//PlayerInputComponent->BindTouch(IE_Released, this, &ARun2DCharacter::TouchStopped);
+	//PlayerInputComponent->BindAxis("MoveRight", this, &ADoRunCharacter::MoveRight);
+	//PlayerInputComponent->BindTouch(IE_Pressed, this, &ADoRunCharacter::TouchStarted);
+	//PlayerInputComponent->BindTouch(IE_Released, this, &ADoRunCharacter::TouchStopped);
 }
 
-void ARun2DCharacter::MoveRight(float Value)
+void ADoRunCharacter::MoveRight(float Value)
 {
 	// Apply the input to the character motion
 	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
 }
 
-void ARun2DCharacter::TouchStarted(const ETouchIndex::Type FingerIndex, const FVector Location)
+void ADoRunCharacter::TouchStarted(const ETouchIndex::Type FingerIndex, const FVector Location)
 {
 	// Jump on any touch
 	Jump();
 }
 
-void ARun2DCharacter::TouchStopped(const ETouchIndex::Type FingerIndex, const FVector Location)
+void ADoRunCharacter::TouchStopped(const ETouchIndex::Type FingerIndex, const FVector Location)
 {
 	// Cease jumping once touch stopped
 	StopJumping();
 }
 
-void ARun2DCharacter::UpdateCharacter()
+void ADoRunCharacter::UpdateCharacter()
 {
 	bool bShouldForceMove = bForceRightMove;
 	if (bShouldForceMove)

@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class Run2D : ModuleRules
+public class DoRun : ModuleRules
 {
-	public Run2D(ReadOnlyTargetRules Target) : base(Target)
+	public DoRun(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
