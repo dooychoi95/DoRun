@@ -6,6 +6,16 @@
 #include "PaperCharacter.h"
 #include "Run2DCharacter.generated.h"
 
+UENUM()
+enum class ECharacterState : uint8
+{
+	Stop,
+	Run,
+	Jump,
+	Fly,
+	Falling,
+};
+
 class UTextRenderComponent;
 
 /**
@@ -31,17 +41,15 @@ class ARun2DCharacter : public APaperCharacter
 
 	UTextRenderComponent* TextComponent;
 	virtual void Tick(float DeltaSeconds) override;
+
 protected:
 	// The animation to play while running around
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Animations)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
 	class UPaperFlipbook* RunningAnimation;
 
 	// The animation to play while idle (standing still)
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
 	class UPaperFlipbook* IdleAnimation;
-
-	/** Called to choose the correct animation to play based on the character's movement state */
-	void UpdateAnimation();
 
 	/** Called for side to side input */
 	void MoveRight(float Value);
@@ -65,4 +73,37 @@ public:
 	FORCEINLINE class UCameraComponent* GetSideViewCameraComponent() const { return SideViewCameraComponent; }
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
+
+	//~~ Begin Character Interface
+	virtual void Jump();
+	virtual void StopJumping();
+	//~~ End Character Interface
+
+	UPROPERTY(EditAnywhere, Category = "DoRun | CharacterMove")
+	bool bForceRightMove;
+
+	UPROPERTY(EditAnywhere, Category = "DoRun | CharacterMove")
+	float ForceRightMoveValue;
+
+private:
+	/** 캐릭터 상태 String 변환 */
+	const FString GetCharacterStateToString(ECharacterState InState) const;
+
+	/** 캐릭터 상태 업데이트 */
+	void SetCharacterState(const ECharacterState NewState);
+
+	/** 캐릭터 상태 변경 성공 시 호출됨 */
+	void OnChangeCharacterState(const ECharacterState NewState);
+
+	/** 캐릭터 상태 변경 성공 시 애니메이션 변경 */
+	void UpdateAnimation(const ECharacterState NewState);
+
+	/** 캐릭터 날기 가능 */
+	bool CanFly() const;
+
+	/** 캐릭터 상태 */
+	ECharacterState CurrntState;
+
+	/** 캐릭터 점프 입력 (바닥에 닿기 시 초기화) */
+	int32 JumpInputCount;
 };
