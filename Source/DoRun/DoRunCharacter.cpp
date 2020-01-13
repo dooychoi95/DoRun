@@ -9,13 +9,15 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "Camera/CameraComponent.h"
+#include "Paper2D/Classes/PaperFlipbook.h"
 
 DEFINE_LOG_CATEGORY_STATIC(SideScrollerCharacter, Log, All);
+
+#define SpriteBoundRatio 0.75f
 
 //////////////////////////////////////////////////////////////////////////
 // ADoRunCharacter
 PRAGMA_DISABLE_OPTIMIZATION
-
 ADoRunCharacter::ADoRunCharacter()
 {
 	// Use only Yaw from the controller and ignore the rest of the rotation.
@@ -35,7 +37,6 @@ ADoRunCharacter::ADoRunCharacter()
 	CameraBoom->bAbsoluteRotation = true;
 	CameraBoom->bDoCollisionTest = false;
 	CameraBoom->RelativeRotation = FRotator(0.0f, -90.0f, 0.0f);
-	
 
 	// Create an orthographic camera (no perspective) and attach it to the boom
 	SideViewCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("SideViewCamera"));
@@ -69,6 +70,16 @@ ADoRunCharacter::ADoRunCharacter()
 	// Enable replication on the Sprite component so animations show up when networked
 	GetSprite()->SetIsReplicated(true);
 	bReplicates = true;
+}
+
+void ADoRunCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (GetSprite())
+	{
+		GetSprite()->SetFlipbook(IdleAnimation);
+	}
 
 	SetCharacterState(ECharacterState::Run);
 }
@@ -85,6 +96,11 @@ void ADoRunCharacter::StopJumping()
 	Super::StopJumping();
 
 	SetCharacterState(ECharacterState::Falling);
+}
+
+void ADoRunCharacter::OnLanded(const FHitResult& Hit)
+{
+	Super::OnLanded(Hit);
 }
 
 // GetState Name
@@ -140,10 +156,15 @@ void ADoRunCharacter::UpdateAnimation(const ECharacterState NewState)
 		break;
 	}
 
-	bool bEnable = GetSprite() && DesiredAnimation && GetSprite()->GetFlipbook() != DesiredAnimation;
+	bool bEnable = GetSprite() && DesiredAnimation && DesiredAnimation != GetSprite()->GetFlipbook();
 	if (bEnable)
 	{
 		GetSprite()->SetFlipbook(DesiredAnimation);
+
+		// Set the size of our collision capsule.
+		FBoxSphereBounds SpriteBox = DesiredAnimation->GetRenderBounds();
+		GetCapsuleComponent()->SetCapsuleHalfHeight(SpriteBox.GetBox().GetExtent().Y * SpriteBoundRatio);
+		GetCapsuleComponent()->SetCapsuleRadius(SpriteBox.GetBox().GetSize().X * SpriteBoundRatio);
 	}
 }
 

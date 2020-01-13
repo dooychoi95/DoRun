@@ -45,11 +45,15 @@ class ADoRunCharacter : public APaperCharacter
 
 protected:
 	// The animation to play while running around
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Animations)
+	class UPaperFlipbook* IdleAnimation;
+
+	// The animation to play while running around
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Animations)
 	class UPaperFlipbook* RunningAnimation;
 
 	// The animation to play while idle (standing still)
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Animations)
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Animations)
 	class UPaperFlipbook* JumpAnimation;
 
 	/** Called for side to side input */
@@ -75,10 +79,12 @@ public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
-	//~~ Begin Character Interface
+	//~~ Begin ACharacter Interface
+	virtual void BeginPlay() override;
 	virtual void Jump();
 	virtual void StopJumping();
-	//~~ End Character Interface
+	void OnLanded(const FHitResult& Hit);
+	//~~ End ACharacter Interface
 
 	UPROPERTY(EditAnywhere, Category = "DoRun | CharacterMove")
 	bool bForceRightMove;
