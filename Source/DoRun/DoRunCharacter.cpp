@@ -81,6 +81,8 @@ void ADoRunCharacter::BeginPlay()
 		GetSprite()->SetFlipbook(IdleAnimation);
 	}
 
+	ResetRightMoveDuringTime();
+
 	SetCharacterState(ECharacterState::Run);
 }
 
@@ -140,6 +142,15 @@ bool ADoRunCharacter::CanFly() const
 	return (0 < JumpCurrentCount);
 }
 
+// 캐릭터 제자리 이동 도달 시간 초기화
+void ADoRunCharacter::ResetRightMoveDuringTime()
+{
+	if (0 < RightMoveDuringTime)
+	{
+		CachedRightMoveDuringTime = RightMoveDuringTime;
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Animation
 
@@ -172,7 +183,7 @@ void ADoRunCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	UpdateCharacter();	
+	UpdateCharacterMove(DeltaSeconds);	
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -206,13 +217,14 @@ void ADoRunCharacter::TouchStopped(const ETouchIndex::Type FingerIndex, const FV
 	StopJumping();
 }
 
-void ADoRunCharacter::UpdateCharacter()
+void ADoRunCharacter::UpdateCharacterMove(float DeltaSeconds)
 {
-	bool bShouldForceMove = bForceRightMove;
-	if (bShouldForceMove)
+	bool bShouldMoveUpdate = 0 < CachedRightMoveDuringTime;
+	if (bShouldMoveUpdate)
 	{
+		CachedRightMoveDuringTime -= DeltaSeconds;
+
 		MoveRight(ForceRightMoveValue);
 	}
 }
-
 PRAGMA_ENABLE_OPTIMIZATION

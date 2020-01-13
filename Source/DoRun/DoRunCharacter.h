@@ -59,7 +59,7 @@ protected:
 	/** Called for side to side input */
 	void MoveRight(float Value);
 
-	void UpdateCharacter();
+	void UpdateCharacterMove(float DeltaSeconds);
 
 	/** Handle touch inputs. */
 	void TouchStarted(const ETouchIndex::Type FingerIndex, const FVector Location);
@@ -87,10 +87,10 @@ public:
 	//~~ End ACharacter Interface
 
 	UPROPERTY(EditAnywhere, Category = "DoRun | CharacterMove")
-	bool bForceRightMove;
+	float ForceRightMoveValue;
 
 	UPROPERTY(EditAnywhere, Category = "DoRun | CharacterMove")
-	float ForceRightMoveValue;
+	float RightMoveDuringTime;
 
 private:
 	/** 캐릭터 상태 String 변환 */
@@ -108,9 +108,12 @@ private:
 	/** 캐릭터 날기 가능 */
 	bool CanFly() const;
 
+	/** 캐릭터 제자리 이동 도달 시간 초기화 */
+	void ResetRightMoveDuringTime();
+
 	/** 캐릭터 상태 */
 	ECharacterState CurrntState;
 
-	/** 캐릭터 점프 입력 (바닥에 닿기 시 초기화) */
-	int32 JumpInputCount;
+	/** 캐릭터 제자리 이동 도달 시간 */
+	float CachedRightMoveDuringTime;
 };
