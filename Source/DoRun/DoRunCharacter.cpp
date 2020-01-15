@@ -13,7 +13,8 @@
 
 DEFINE_LOG_CATEGORY_STATIC(SideScrollerCharacter, Log, All);
 
-#define SpriteBoundRatio 0.75f
+#define SpriteBoundRatio 0.5f
+#define SpriteSlideBoundRatio 0.25f
 
 //////////////////////////////////////////////////////////////////////////
 // ADoRunCharacter
@@ -93,16 +94,62 @@ void ADoRunCharacter::Jump()
 	SetCharacterState(ECharacterState::Jump);
 }
 
-void ADoRunCharacter::StopJumping()
+void ADoRunCharacter::Falling()
 {
-	Super::StopJumping();
+	Super::Falling();
 
 	SetCharacterState(ECharacterState::Falling);
 }
 
-void ADoRunCharacter::OnLanded(const FHitResult& Hit)
+void ADoRunCharacter::Landed(const FHitResult& Hit)
 {
-	Super::OnLanded(Hit);
+	Super::Landed(Hit);
+
+	// 슬라이딩 입력이 유지된다면 슬라이딩 상태로 변경
+	bool bEnableSliding = bPressedSliding;
+	if (bEnableSliding)
+	{
+		SetCharacterState(ECharacterState::Sliding);
+	}
+	else
+	{
+		SetCharacterState(ECharacterState::Run);
+	}
+}
+
+// 슬라이딩 입력 시 즉시 상태 변경 가능한지 확인
+void ADoRunCharacter::PressedSliding()
+{
+	ProssceSliding(true);
+}
+
+// 슬라이딩 입력 시 즉시 상태 변경 가능한지 확인
+void ADoRunCharacter::ReleasedSliding()
+{
+	ProssceSliding(false);
+}
+
+// 슬라이딩 입력 시 즉시 상태 변경 가능한지 확인
+void ADoRunCharacter::ProssceSliding(bool bPressed)
+{
+	// 입력 보관
+	// 점프 -> 착지 시 입력 상태에 따라 다음 행동을 제어합니다.
+	bPressedSliding = bPressed;
+
+	if (bPressed)
+	{
+		if (GetCharacterState() == ECharacterState::Run)
+		{
+			SetCharacterState(ECharacterState::Sliding);
+		}
+	}
+	else
+	{
+		if (GetCharacterState() == ECharacterState::Sliding)
+		{
+			SetCharacterState(ECharacterState::Run);
+		}
+	}
 }
 
 // GetState Name
@@ -128,6 +175,11 @@ void ADoRunCharacter::SetCharacterState(const ECharacterState NewState)
 	}
 }
 
+const ECharacterState ADoRunCharacter::GetCharacterState() const
+{
+	return CurrntState;
+}
+
 // 캐릭터 상태 변경 성공 시 호출
 void ADoRunCharacter::OnChangeCharacterState(const ECharacterState NewState)
 {
@@ -140,6 +192,16 @@ void ADoRunCharacter::OnChangeCharacterState(const ECharacterState NewState)
 bool ADoRunCharacter::CanFly() const
 {
 	return (0 < JumpCurrentCount);
+}
+
+bool ADoRunCharacter::CanProssceSliding() const
+{
+	return (GetCharacterState() == ECharacterState::Run);
+}
+
+bool ADoRunCharacter::ShouldSlidingToCharacterLanded() const
+{
+	return bPressedSliding;
 }
 
 // 캐릭터 제자리 이동 도달 시간 초기화
@@ -159,10 +221,14 @@ void ADoRunCharacter::UpdateAnimation(const ECharacterState NewState)
 	UPaperFlipbook* DesiredAnimation = nullptr;
 	switch (NewState)
 	{
-	case ECharacterState::Jump: // 점프 애니메이션만 따로 재생
+	case ECharacterState::Jump: // 점프 애니메이션
 		DesiredAnimation = JumpAnimation;
 		break;
-	default: // 그 외 애니메이션은 달리기
+	case ECharacterState::Sliding: // 슬라이딩 애니메이션
+		DesiredAnimation = SlidingAnimation;
+		break;
+	default: 
+		// 그 외 애니메이션은 달리기
 		DesiredAnimation = RunningAnimation;
 		break;
 	}
@@ -172,10 +238,12 @@ void ADoRunCharacter::UpdateAnimation(const ECharacterState NewState)
 	{
 		GetSprite()->SetFlipbook(DesiredAnimation);
 
+		// 캐릭터의 Y값 -> 서있는 경우 100uu, 엎드린 경우 50uu
+		float BoundYSize = (DesiredAnimation == SlidingAnimation) ? SpriteSlideBoundRatio : SpriteBoundRatio;
+
 		// Set the size of our collision capsule.
 		FBoxSphereBounds SpriteBox = DesiredAnimation->GetRenderBounds();
-		GetCapsuleComponent()->SetCapsuleHalfHeight(SpriteBox.GetBox().GetExtent().Y * SpriteBoundRatio);
-		GetCapsuleComponent()->SetCapsuleRadius(SpriteBox.GetBox().GetSize().X * SpriteBoundRatio);
+		GetCapsuleComponent()->SetCapsuleHalfHeight(BoundYSize);
 	}
 }
 
@@ -191,12 +259,9 @@ void ADoRunCharacter::Tick(float DeltaSeconds)
 
 void ADoRunCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
-	// Note: the 'Jump' action and the 'MoveRight' axis are bound to actual keys/buttons/sticks in DefaultInput.ini (editable from Project Settings..Input)
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
-	//PlayerInputComponent->BindAxis("MoveRight", this, &ADoRunCharacter::MoveRight);
-	//PlayerInputComponent->BindTouch(IE_Pressed, this, &ADoRunCharacter::TouchStarted);
-	//PlayerInputComponent->BindTouch(IE_Released, this, &ADoRunCharacter::TouchStopped);
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ADoRunCharacter::Jump);
+	PlayerInputComponent->BindAction("Slide", IE_Pressed, this, &ADoRunCharacter::PressedSliding);
+	PlayerInputComponent->BindAction("Slide", IE_Released, this, &ADoRunCharacter::ReleasedSliding);
 }
 
 void ADoRunCharacter::MoveRight(float Value)

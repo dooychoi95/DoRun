@@ -14,6 +14,7 @@ enum class ECharacterState : uint8
 	Jump,
 	Fly,
 	Falling,
+	Sliding,
 	Max,
 };
 
@@ -56,6 +57,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Animations)
 	class UPaperFlipbook* JumpAnimation;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Animations)
+	class UPaperFlipbook* SlidingAnimation;
+
 	/** Called for side to side input */
 	void MoveRight(float Value);
 
@@ -82,9 +86,14 @@ public:
 	//~~ Begin ACharacter Interface
 	virtual void BeginPlay() override;
 	virtual void Jump();
-	virtual void StopJumping();
-	void OnLanded(const FHitResult& Hit);
+	virtual void Falling();
+	virtual void Landed(const FHitResult& Hit);
+	void PressedSliding();
+	void ReleasedSliding();
 	//~~ End ACharacter Interface
+
+	/** 미끄러지기 */
+	void ProssceSliding(bool bPressed);
 
 	UPROPERTY(EditAnywhere, Category = "DoRun | CharacterMove")
 	float ForceRightMoveValue;
@@ -99,6 +108,9 @@ private:
 	/** 캐릭터 상태 업데이트 */
 	void SetCharacterState(const ECharacterState NewState);
 
+	/** 캐릭터 현재 상태 가져오기 */
+	const ECharacterState GetCharacterState() const;
+
 	/** 캐릭터 상태 변경 성공 시 호출됨 */
 	void OnChangeCharacterState(const ECharacterState NewState);
 
@@ -108,6 +120,12 @@ private:
 	/** 캐릭터 날기 가능 */
 	bool CanFly() const;
 
+	/** 캐릭터 슬라이딩 시작 가능 여부 */
+	bool CanProssceSliding() const;
+
+	/** 캐릭터 슬라이딩 시작 가능 여부 */
+	bool ShouldSlidingToCharacterLanded() const;
+
 	/** 캐릭터 제자리 이동 도달 시간 초기화 */
 	void ResetRightMoveDuringTime();
 
@@ -116,4 +134,7 @@ private:
 
 	/** 캐릭터 제자리 이동 도달 시간 */
 	float CachedRightMoveDuringTime;
+
+	/** 캐릭터 슬라이딩 키 인풋 여부 */
+	bool bPressedSliding;
 };
