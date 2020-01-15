@@ -111,9 +111,6 @@ private:
 	/** 캐릭터 상태 변경 성공 시 애니메이션 변경 */
 	void UpdateAnimation(const ECharacterState NewState);
 
-	/** 캐릭터 날기 가능 */
-	bool CanFly() const;
-
 	/** 캐릭터 슬라이딩 시작 가능 여부 */
 	bool CanProssceSliding() const;
 
@@ -122,6 +119,9 @@ private:
 
 	/** 캐릭터 제자리 이동 도달 시간 초기화 */
 	void ResetRightMoveDuringTime();
+
+	/** 캐릭터 제자리 이동 도달 완료 */
+	void OnFinishMoveRight();
 
 	/** 캐릭터 상태 */
 	ECharacterState CurrntState;

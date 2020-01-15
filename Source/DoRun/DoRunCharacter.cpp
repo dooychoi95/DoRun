@@ -13,8 +13,8 @@
 
 DEFINE_LOG_CATEGORY_STATIC(SideScrollerCharacter, Log, All);
 
-#define SpriteBoundRatio 0.5f
-#define SpriteSlideBoundRatio 0.25f
+#define SpriteBoundRatio 47.f
+#define SpriteSlideBoundRatio 37.f
 
 //////////////////////////////////////////////////////////////////////////
 // ADoRunCharacter
@@ -27,8 +27,8 @@ ADoRunCharacter::ADoRunCharacter()
 	bUseControllerRotationRoll = false;
 
 	// Set the size of our collision capsule.
-	GetCapsuleComponent()->SetCapsuleHalfHeight(96.0f);
-	GetCapsuleComponent()->SetCapsuleRadius(40.0f);
+	//GetCapsuleComponent()->SetCapsuleHalfHeight(51.0f);
+	//GetCapsuleComponent()->SetCapsuleRadius(50.0f);
 
 	// Create a camera boom attached to the root (capsule)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -98,22 +98,25 @@ void ADoRunCharacter::Falling()
 {
 	Super::Falling();
 
-	SetCharacterState(ECharacterState::Falling);
+	//SetCharacterState(ECharacterState::Falling);
 }
 
 void ADoRunCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
-	// 슬라이딩 입력이 유지된다면 슬라이딩 상태로 변경
-	bool bEnableSliding = bPressedSliding;
-	if (bEnableSliding)
+	if (!HasAuthority())
 	{
-		SetCharacterState(ECharacterState::Sliding);
-	}
-	else
-	{
-		SetCharacterState(ECharacterState::Run);
+		// 슬라이딩 입력이 유지된다면 슬라이딩 상태로 변경
+		bool bEnableSliding = bPressedSliding;
+		if (bEnableSliding)
+		{
+			SetCharacterState(ECharacterState::Sliding);
+		}
+		else
+		{
+			SetCharacterState(ECharacterState::Run);
+		}
 	}
 }
 
@@ -208,6 +211,16 @@ void ADoRunCharacter::ResetRightMoveDuringTime()
 	}
 }
 
+// 캐릭터 시작 위치로 이동 완료 시 호출됨 
+void ADoRunCharacter::OnFinishMoveRight()
+{
+	// 카메라 현재 위치 고정
+	if (SideViewCameraComponent)
+	{
+		SideViewCameraComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////
 // Animation
 
@@ -235,10 +248,7 @@ void ADoRunCharacter::UpdateAnimation(const ECharacterState NewState)
 
 		// 캐릭터의 Y값 -> 서있는 경우 100uu, 엎드린 경우 50uu
 		float BoundYSize = (DesiredAnimation == SlidingAnimation) ? SpriteSlideBoundRatio : SpriteBoundRatio;
-
-		// Set the size of our collision capsule.
-		FBoxSphereBounds SpriteBox = DesiredAnimation->GetRenderBounds();
-		GetCapsuleComponent()->SetCapsuleHalfHeight(BoundYSize);
+		GetCapsuleComponent()->SetCapsuleSize(BoundYSize, BoundYSize, true);
 	}
 }
 
@@ -276,6 +286,12 @@ void ADoRunCharacter::UpdateCharacterMove(float DeltaSeconds)
 		CachedRightMoveDuringTime -= DeltaSeconds;
 
 		MoveRight(ForceRightMoveValue);
+
+		bool bFinishMoveRight = (CachedRightMoveDuringTime < 0.f);
+		if (bFinishMoveRight)
+		{
+			OnFinishMoveRight();
+		}
 	}
 }
 PRAGMA_ENABLE_OPTIMIZATION
