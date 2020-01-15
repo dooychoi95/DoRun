@@ -85,6 +85,12 @@ void ADoRunCharacter::BeginPlay()
 	ResetRightMoveDuringTime();
 
 	SetCharacterState(ECharacterState::Run);
+
+	// 카메라 월드 고정 전까지 입력 막음
+	if (Controller)
+	{
+		Controller->SetIgnoreMoveInput(true);
+	}
 }
 
 void ADoRunCharacter::Jump()
@@ -214,11 +220,6 @@ void ADoRunCharacter::ResetRightMoveDuringTime()
 // 캐릭터 시작 위치로 이동 완료 시 호출됨 
 void ADoRunCharacter::OnFinishMoveRight()
 {
-	// 카메라 현재 위치 고정
-	if (SideViewCameraComponent)
-	{
-		SideViewCameraComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -257,6 +258,7 @@ void ADoRunCharacter::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	UpdateCharacterMove(DeltaSeconds);	
+	UpdateCameraDetach(DeltaSeconds);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -291,6 +293,35 @@ void ADoRunCharacter::UpdateCharacterMove(float DeltaSeconds)
 		if (bFinishMoveRight)
 		{
 			OnFinishMoveRight();
+		}
+	}
+}
+
+void ADoRunCharacter::UpdateCameraDetach(float DeltaSeconds)
+{
+	bool bShouldCameraFixed = !bCameraFixed && 0 < CameraDetachDuringTime;
+	if (bShouldCameraFixed)
+	{
+		CameraDetachDuringTime -= DeltaSeconds;
+		
+		bool bFinishTime = (CameraDetachDuringTime < 0.f);
+		if (bFinishTime)
+		{
+			// 카메라 현재 위치 고정
+			if (SideViewCameraComponent)
+			{
+				SideViewCameraComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+			}
+
+			// 카메라 고정 후 인풋 가능하게 변경
+			if (Controller)
+			{
+				Controller->SetIgnoreMoveInput(false);
+			}
+
+			// 카메라 고정 후 캐릭터가 뒤로 위치하도록
+			ForceRightMoveValue *= -1.f;
+			bCameraFixed = true;
 		}
 	}
 }

@@ -65,6 +65,8 @@ protected:
 
 	void UpdateCharacterMove(float DeltaSeconds);
 
+	void UpdateCameraDetach(float DeltaSeconds);
+
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
 	// End of APawn interface
@@ -94,6 +96,10 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "DoRun | CharacterMove")
 	float RightMoveDuringTime;
+
+	/** 카메라 월드 고정 시간 해당 시간 후 캐릭터 강제 이동이 반대로 입력 됩니다.*/
+	UPROPERTY(EditAnywhere, Category = "DoRun | CameraMove")
+	float CameraDetachDuringTime;
 
 private:
 	/** 캐릭터 상태 String 변환 */
@@ -131,4 +137,7 @@ private:
 
 	/** 캐릭터 슬라이딩 키 인풋 여부 */
 	bool bPressedSliding;
+
+	/** 카메라 고정 완료 */
+	bool bCameraFixed;
 };
