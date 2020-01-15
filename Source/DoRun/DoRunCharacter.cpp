@@ -129,7 +129,7 @@ void ADoRunCharacter::ReleasedSliding()
 	ProssceSliding(false);
 }
 
-// 슬라이딩 입력 시 즉시 상태 변경 가능한지 확인
+// 슬라이딩 입력 시 즉시 상태 변경 가능한지 확인 
 void ADoRunCharacter::ProssceSliding(bool bPressed)
 {
 	// 입력 보관
@@ -187,11 +187,6 @@ void ADoRunCharacter::OnChangeCharacterState(const ECharacterState NewState)
 	UpdateAnimation(NewState);
 
 	UE_LOG(SideScrollerCharacter, Log, TEXT("Current: %s New: %s"), *GetCharacterStateToString(CurrntState), *GetCharacterStateToString(NewState));
-}
-
-bool ADoRunCharacter::CanFly() const
-{
-	return (0 < JumpCurrentCount);
 }
 
 bool ADoRunCharacter::CanProssceSliding() const
@@ -259,7 +254,10 @@ void ADoRunCharacter::Tick(float DeltaSeconds)
 
 void ADoRunCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
+	// 점프
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ADoRunCharacter::Jump);
+
+	// 슬라이딩
 	PlayerInputComponent->BindAction("Slide", IE_Pressed, this, &ADoRunCharacter::PressedSliding);
 	PlayerInputComponent->BindAction("Slide", IE_Released, this, &ADoRunCharacter::ReleasedSliding);
 }
@@ -268,18 +266,6 @@ void ADoRunCharacter::MoveRight(float Value)
 {
 	// Apply the input to the character motion
 	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
-}
-
-void ADoRunCharacter::TouchStarted(const ETouchIndex::Type FingerIndex, const FVector Location)
-{
-	// Jump on any touch
-	Jump();
-}
-
-void ADoRunCharacter::TouchStopped(const ETouchIndex::Type FingerIndex, const FVector Location)
-{
-	// Cease jumping once touch stopped
-	StopJumping();
 }
 
 void ADoRunCharacter::UpdateCharacterMove(float DeltaSeconds)

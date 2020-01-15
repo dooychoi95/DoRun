@@ -65,12 +65,6 @@ protected:
 
 	void UpdateCharacterMove(float DeltaSeconds);
 
-	/** Handle touch inputs. */
-	void TouchStarted(const ETouchIndex::Type FingerIndex, const FVector Location);
-
-	/** Handle touch stop event. */
-	void TouchStopped(const ETouchIndex::Type FingerIndex, const FVector Location);
-
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
 	// End of APawn interface
@@ -88,11 +82,11 @@ public:
 	virtual void Jump();
 	virtual void Falling();
 	virtual void Landed(const FHitResult& Hit);
-	void PressedSliding();
-	void ReleasedSliding();
 	//~~ End ACharacter Interface
 
 	/** ¹Ì²ô·¯Áö±â */
+	void PressedSliding();
+	void ReleasedSliding();
 	void ProssceSliding(bool bPressed);
 
 	UPROPERTY(EditAnywhere, Category = "DoRun | CharacterMove")
