@@ -215,6 +215,11 @@ void ADoRunCharacter::ResetRightMoveDuringTime()
 	{
 		CachedRightMoveDuringTime = RightMoveDuringTime;
 	}
+	else
+	{
+		// 없다면 기본 달리기로
+		CachedRightMoveDuringTime = 100000.f;
+	}
 }
 
 // 캐릭터 시작 위치로 이동 완료 시 호출됨 
