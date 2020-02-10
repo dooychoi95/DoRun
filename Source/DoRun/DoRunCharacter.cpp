@@ -66,7 +66,7 @@ ADoRunCharacter::ADoRunCharacter()
 	// Behave like a traditional 2D platformer character, with a flat bottom instead of a curved capsule bottom
 	// Note: This can cause a little floating when going up inclines; you can choose the tradeoff between better
 	// behavior on the edge of a ledge versus inclines by setting this to true or false
-	GetCharacterMovement()->bUseFlatBaseForFloorChecks = true;
+	GetCharacterMovement()->bUseFlatBaseForFloorChecks = false;
 
 	// Enable replication on the Sprite component so animations show up when networked
 	GetSprite()->SetIsReplicated(true);
@@ -104,7 +104,7 @@ void ADoRunCharacter::Falling()
 {
 	Super::Falling();
 
-	//SetCharacterState(ECharacterState::Falling);
+	SetCharacterState(ECharacterState::Falling);
 }
 
 void ADoRunCharacter::Landed(const FHitResult& Hit)
@@ -193,7 +193,7 @@ const ECharacterState ADoRunCharacter::GetCharacterState() const
 void ADoRunCharacter::OnChangeCharacterState(const ECharacterState NewState)
 {
 	// 애니메이션 변경
-	UpdateAnimation(NewState);
+	UpdateAnimationToStateChange(NewState);
 
 	UE_LOG(SideScrollerCharacter, Log, TEXT("Current: %s New: %s"), *GetCharacterStateToString(CurrntState), *GetCharacterStateToString(NewState));
 }
@@ -230,7 +230,7 @@ void ADoRunCharacter::OnFinishMoveRight()
 //////////////////////////////////////////////////////////////////////////
 // Animation
 
-void ADoRunCharacter::UpdateAnimation(const ECharacterState NewState)
+void ADoRunCharacter::UpdateAnimationToStateChange(const ECharacterState NewState)
 {
 	UPaperFlipbook* DesiredAnimation = nullptr;
 	switch (NewState)
@@ -253,8 +253,30 @@ void ADoRunCharacter::UpdateAnimation(const ECharacterState NewState)
 		GetSprite()->SetFlipbook(DesiredAnimation);
 
 		// 캐릭터의 Y값 -> 서있는 경우 100uu, 엎드린 경우 50uu
-		float BoundYSize = (DesiredAnimation == SlidingAnimation) ? SpriteSlideBoundRatio : SpriteBoundRatio;
-		GetCapsuleComponent()->SetCapsuleSize(BoundYSize, BoundYSize, true);
+		//
+		/**
+		 * 캐릭터 Z (Half Height)
+		 *  a. 서있는 경우 100uu -> 50
+		 *  b. 엎드린 경우 50uu -> 25
+		 * 캐릭터 X (Radius)
+		 *  a. 서있는 경우 25
+		 *  b. 엎드린 경우 50
+		 */
+		float NewRadius = 0.f;
+		float NewHalfHeight = 0.f;
+		bool bSliding = DesiredAnimation == SlidingAnimation;
+		if (bSliding)
+		{
+			NewRadius = 50.f;
+			NewHalfHeight = 25.f;
+		}
+		else
+		{
+			NewRadius = 25.f;
+			NewHalfHeight = 50.f;
+		}
+
+		GetCapsuleComponent()->SetCapsuleSize(NewRadius, NewHalfHeight, true);
 	}
 }
 
@@ -293,6 +315,12 @@ void ADoRunCharacter::UpdateCharacterMove(float DeltaSeconds)
 		CachedRightMoveDuringTime -= DeltaSeconds;
 
 		MoveRight(ForceRightMoveValue);
+		
+		// 장애물에 막힌 경우 X, Y 값이 변화하지 않기 때문에 Velocity 로 이동 Todo 고드 정리 ㅠㅠ
+		if (GetMovementComponent()->Velocity.X <= 350.f)
+		{
+			GetMovementComponent()->Velocity.X = 350.f;
+		}
 
 		bool bFinishMoveRight = (CachedRightMoveDuringTime < 0.f);
 		if (bFinishMoveRight)

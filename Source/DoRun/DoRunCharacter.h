@@ -115,7 +115,7 @@ private:
 	void OnChangeCharacterState(const ECharacterState NewState);
 
 	/** 캐릭터 상태 변경 성공 시 애니메이션 변경 */
-	void UpdateAnimation(const ECharacterState NewState);
+	void UpdateAnimationToStateChange(const ECharacterState NewState);
 
 	/** 캐릭터 슬라이딩 시작 가능 여부 */
 	bool CanProssceSliding() const;
