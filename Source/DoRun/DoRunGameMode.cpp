@@ -8,3 +8,19 @@ ADoRunGameMode::ADoRunGameMode()
 	// Set default pawn class to our character
 	DefaultPawnClass = ADoRunCharacter::StaticClass();	
 }
+
+void ADoRunGameMode::SetGameRestart()
+{
+	if (GetWorld())
+	{
+		if (RestartTime > 0.f)
+		{
+			GetWorld()->GetTimerManager().SetTimer(RestartrTimer, this, &ADoRunGameMode::OnGameRestart, RestartTime);
+		}
+	}
+}
+
+void ADoRunGameMode::OnGameRestart()
+{
+	RestartGame();
+}

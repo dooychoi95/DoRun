@@ -15,10 +15,13 @@ enum class ECharacterState : uint8
 	Fly,
 	Falling,
 	Sliding,
+	Dying,
 	Max,
 };
 
 class UTextRenderComponent;
+class UWidgetComponent;
+class UUserWidget;
 
 /**
  * This class is the default character for Run2D, and it is responsible for all
@@ -59,6 +62,15 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Animations)
 	class UPaperFlipbook* SlidingAnimation;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Animations)
+	class UPaperFlipbook* DyingAnimation;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = Widget)
+	TSubclassOf<UUserWidget> StartingWidgetClass;
+
+	UPROPERTY()
+	UUserWidget* CurrentWidget;
 
 	/** Called for side to side input */
 	void MoveRight(float Value);
@@ -101,6 +113,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "DoRun | CameraMove")
 	float CameraDetachDuringTime;
 
+	/** 이동 중 충돌 시 호출 */
+	virtual void MoveBlockedBy(const FHitResult& Impact);
+
+	/** 충돌 사망 연출 */
+	void CharacterMoveBlockedEnding();
+
 private:
 	/** 캐릭터 상태 String 변환 */
 	const FString GetCharacterStateToString(ECharacterState InState) const;
@@ -126,9 +144,6 @@ private:
 	/** 캐릭터 제자리 이동 도달 시간 초기화 */
 	void ResetRightMoveDuringTime();
 
-	/** 캐릭터 제자리 이동 도달 완료 */
-	void OnFinishMoveRight();
-
 	/** 캐릭터 상태 */
 	ECharacterState CurrntState;
 
@@ -140,4 +155,7 @@ private:
 
 	/** 카메라 고정 완료 */
 	bool bCameraFixed;
+
+	/** 이동 벡터 */
+	FVector MoveRightVector;
 };

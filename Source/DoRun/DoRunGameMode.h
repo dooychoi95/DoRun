@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode.h"
 #include "DoRunGameMode.generated.h"
 
 /**
@@ -13,9 +13,20 @@
  * This game mode just sets the default pawn to be the MyCharacter asset, which is a subclass of Run2DCharacter
  */
 UCLASS(minimalapi)
-class ADoRunGameMode : public AGameModeBase
+class ADoRunGameMode : public AGameMode
 {
 	GENERATED_BODY()
 public:
 	ADoRunGameMode();
+
+	UPROPERTY(EditAnywhere, Category = "DoRun | RestartDelayTime")
+	float RestartTime;
+	
+	UFUNCTION()
+	void SetGameRestart();
+
+	UFUNCTION()
+	void OnGameRestart();
+
+	FTimerHandle RestartrTimer;
 };

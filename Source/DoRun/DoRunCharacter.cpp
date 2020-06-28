@@ -8,13 +8,19 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/HUD.h"
 #include "Camera/CameraComponent.h"
 #include "Paper2D/Classes/PaperFlipbook.h"
+#include "Paper2D/Classes/PaperTileMapActor.h"
+#include "Paper2D/Classes/PaperTileMapComponent.h"
+#include "Blueprint/UserWidget.h"
+//#include "GameFramework/GameMode.h"
+#include "DoRunGameMode.h"
+
+#include "DrawDebugHelpers.h"
 
 DEFINE_LOG_CATEGORY_STATIC(SideScrollerCharacter, Log, All);
-
-#define SpriteBoundRatio 47.f
-#define SpriteSlideBoundRatio 37.f
 
 //////////////////////////////////////////////////////////////////////////
 // ADoRunCharacter
@@ -71,6 +77,8 @@ ADoRunCharacter::ADoRunCharacter()
 	// Enable replication on the Sprite component so animations show up when networked
 	GetSprite()->SetIsReplicated(true);
 	bReplicates = true;
+
+	MoveRightVector = FVector(1.0f, 0.0f, 0.0f);
 }
 
 void ADoRunCharacter::BeginPlay()
@@ -90,13 +98,29 @@ void ADoRunCharacter::BeginPlay()
 	if (Controller)
 	{
 		Controller->SetIgnoreMoveInput(true);
+
+		// 게임 종료 위젯 생성
+		if (StartingWidgetClass != nullptr)
+		{
+			CurrentWidget = CreateWidget<UUserWidget>(GetWorld(), StartingWidgetClass);
+			if (!CurrentWidget->IsInViewport())
+			{
+				CurrentWidget->AddToViewport();
+			}
+		}
 	}
 }
 
 void ADoRunCharacter::Jump()
 {
+	if (CurrentWidget->IsInViewport())
+	{
+		CurrentWidget->RemoveFromViewport();
+		return;
+	}
+
 	Super::Jump();
-	
+
 	SetCharacterState(ECharacterState::Jump);
 }
 
@@ -104,15 +128,18 @@ void ADoRunCharacter::Falling()
 {
 	Super::Falling();
 
-	SetCharacterState(ECharacterState::Falling);
+	if (GetCharacterState() != ECharacterState::Dying)
+	{
+		SetCharacterState(ECharacterState::Falling);
+	}
 }
 
 void ADoRunCharacter::Landed(const FHitResult& Hit)
 {
 	Super::Landed(Hit);
 
-	if (!HasAuthority())
-	{
+	//if (!HasAuthority())
+	//{
 		// 슬라이딩 입력이 유지된다면 슬라이딩 상태로 변경
 		bool bEnableSliding = bPressedSliding;
 		if (bEnableSliding)
@@ -123,7 +150,7 @@ void ADoRunCharacter::Landed(const FHitResult& Hit)
 		{
 			SetCharacterState(ECharacterState::Run);
 		}
-	}
+	//}
 }
 
 // 슬라이딩 입력 시 즉시 상태 변경 가능한지 확인
@@ -157,6 +184,64 @@ void ADoRunCharacter::ProssceSliding(bool bPressed)
 		if (GetCharacterState() == ECharacterState::Sliding)
 		{
 			SetCharacterState(ECharacterState::Run);
+		}
+	}
+}
+
+// 이동 중 충돌되는 경우 사망 연출 후 게임 종료
+void ADoRunCharacter::MoveBlockedBy(const FHitResult& Impact)
+{
+	Super::MoveBlockedBy(Impact);
+
+	if (Impact.Actor.IsValid())
+	{
+		CharacterMoveBlockedEnding();
+
+		UE_LOG(SideScrollerCharacter, Log, TEXT("Character MoveBlockedBy"), *Impact.Actor.Get()->GetName());
+	}
+}
+
+void ADoRunCharacter::CharacterMoveBlockedEnding()
+{
+	// 입력 막음
+	if (Controller)
+	{
+		Controller->SetIgnoreMoveInput(true);
+	}
+
+	// 이동 벡터를 0으로 만들어 이동 불가하게 함
+	MoveRightVector = FVector::ZeroVector;
+
+	CachedRightMoveDuringTime = 0.0f;
+
+	// 캐릭터를 위로 살짝 띄워준 후
+	if (GetMovementComponent())
+	{
+		GetMovementComponent()->Velocity = FVector::ZeroVector;
+		GetMovementComponent()->Velocity.Z = 350.f;
+		GetMovementComponent()->UpdateComponentVelocity();
+	}
+
+	// Collision 을 꺼서 월드 바깥으로 떨어져 사망하게끔 함
+	SetActorEnableCollision(false);
+
+	// 사망 상태 변경 및 애니메이션 재생
+	SetCharacterState(ECharacterState::Dying);
+
+	// 카메라 현재 위치 고정
+	if (SideViewCameraComponent)
+	{
+		SideViewCameraComponent->AddLocalRotation(FRotator());
+		SideViewCameraComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	}
+
+	// 게임 재시작 주기 설정
+	if (HasAuthority() && GetWorld())
+	{
+		ADoRunGameMode* DoRunGameMode = GetWorld()->GetAuthGameMode() ? Cast<ADoRunGameMode>(GetWorld()->GetAuthGameMode()) : nullptr;
+		if (DoRunGameMode)
+		{
+			DoRunGameMode->SetGameRestart();
 		}
 	}
 }
@@ -222,11 +307,6 @@ void ADoRunCharacter::ResetRightMoveDuringTime()
 	}
 }
 
-// 캐릭터 시작 위치로 이동 완료 시 호출됨 
-void ADoRunCharacter::OnFinishMoveRight()
-{
-}
-
 //////////////////////////////////////////////////////////////////////////
 // Animation
 
@@ -240,6 +320,9 @@ void ADoRunCharacter::UpdateAnimationToStateChange(const ECharacterState NewStat
 		break;
 	case ECharacterState::Sliding: // 슬라이딩 애니메이션
 		DesiredAnimation = SlidingAnimation;
+		break;
+	case ECharacterState::Dying:
+		DesiredAnimation = DyingAnimation;
 		break;
 	default: 
 		// 그 외 애니메이션은 달리기
@@ -267,8 +350,8 @@ void ADoRunCharacter::UpdateAnimationToStateChange(const ECharacterState NewStat
 		bool bSliding = DesiredAnimation == SlidingAnimation;
 		if (bSliding)
 		{
-			NewRadius = 50.f;
-			NewHalfHeight = 25.f;
+			NewRadius = 20.f;
+			NewHalfHeight = 10.f;
 		}
 		else
 		{
@@ -284,8 +367,11 @@ void ADoRunCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	UpdateCharacterMove(DeltaSeconds);	
-	UpdateCameraDetach(DeltaSeconds);
+	if (CurrentWidget && !CurrentWidget->IsInViewport())
+	{
+		UpdateCharacterMove(DeltaSeconds);
+		UpdateCameraDetach(DeltaSeconds);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -303,8 +389,7 @@ void ADoRunCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInp
 
 void ADoRunCharacter::MoveRight(float Value)
 {
-	// Apply the input to the character motion
-	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), Value);
+	AddMovementInput(MoveRightVector, Value);
 }
 
 void ADoRunCharacter::UpdateCharacterMove(float DeltaSeconds)
@@ -320,12 +405,6 @@ void ADoRunCharacter::UpdateCharacterMove(float DeltaSeconds)
 		if (GetMovementComponent()->Velocity.X <= 350.f)
 		{
 			GetMovementComponent()->Velocity.X = 350.f;
-		}
-
-		bool bFinishMoveRight = (CachedRightMoveDuringTime < 0.f);
-		if (bFinishMoveRight)
-		{
-			OnFinishMoveRight();
 		}
 	}
 }
